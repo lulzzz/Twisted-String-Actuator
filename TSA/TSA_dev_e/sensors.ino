@@ -60,24 +60,29 @@ struct FBK getAllFeedback() {
   fbk.fsr2 = getFSRForce(fsr2Pin);
   fbk.outputRev = getOutputRev();      // CW is positive rotation
   fbk.outputAngle = getOutputAngle();  // CW is positive rotation
-  fbk.enc1 = -enc1.read();   // CCW should be positive so that string rotation matches the twist direction of the steel cable
-  fbk.enc2 = enc2.read();    // CW should be positive so that string rotation matches the twist direction of the steel cable
-  
+//  fbk.enc1 = -enc1.read();   // CCW should be positive so that string rotation matches the twist direction of the steel cable
+//  fbk.enc2 = enc2.read();    // CW should be positive so that string rotation matches the twist direction of the steel cable
+  fbk.enc1 = -enc1Count;
+  fbk.enc2 = enc2Count;  
   
   // keep track of number of full motor revolutions. Need to do this because Arduino runs out of memory when counting absolute rotation 
   // at approx. 2000 counts per revolution (CPR) and thousands of revolutions
-  if (fbk.enc1 > CPR) {
-    m1_turns += 1; 
+  if (fbk.enc1 >= CPR) {
+    m1_turns += 1;
+    enc1Count = 0; 
     enc1.write(0); }
-  else if (fbk.enc1 < -CPR) {
-    m1_turns -= 1; 
+  else if (fbk.enc1 <= -CPR) {
+    m1_turns -= 1;
+    enc1Count = 0; 
     enc1.write(0);}
   
-  if (fbk.enc2 > CPR) {
-    m2_turns += 1; 
+  if (fbk.enc2 >= CPR) {
+    m2_turns += 1;
+    enc2Count = 0; 
     enc2.write(0); }
-  else if (fbk.enc2 < -CPR) {
+  else if (fbk.enc2 <= -CPR) {
     m2_turns -= 1; 
+    enc2Count = 0;
     enc2.write(0);} 
     
   fbk.m1Twists = m1_turns + fbk.enc1/CPR;  // units are number of turns. it can be any real number (i.e. not only whole numbers)
@@ -86,10 +91,28 @@ struct FBK getAllFeedback() {
   
   return fbk;
 }
+
+void e1p() {
+  enc1Count += incThresh;
+}
+
+void e1n() {
+  enc1Count -= incThresh;
+}
+
+void e2p() {
+  enc2Count += incThresh;
+}
+
+void e2n() {
+  enc2Count -= incThresh;
+}
   
 
 void zeroEncoders() {
   enc1.write(0);
   enc2.write(0);
+  enc1Count = 0;
+  enc2Count = 0;
   m1_turns = 0;
   m2_turns = 0;  }
